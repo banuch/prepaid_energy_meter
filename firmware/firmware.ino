@@ -10,7 +10,9 @@
 //   power via a relay when balance reaches zero; reconnects automatically
 //   once a recharge brings it positive again.
 // - Serves a web dashboard over Wi-Fi: live readings, balance and tariff, plus
-//   password-protected "reset balance" and "reset billing cycle" operations.
+//   password-protected "reset balance", "reset billing cycle" and manual relay
+//   OFF/ON operations (the relay can be held off, but ON never overrides a
+//   zero balance or a PZEM fault).
 //   Joins your router, or starts its own hotspot if it can't (see the Wi-Fi
 //   config below).
 //
@@ -87,8 +89,9 @@
 //                     5V / GND        5V (VIN) / GND   Mains side wired per PZEM manual
 //   Warning LED/buzz  signal          IO13             Active HIGH (use a transistor
 //                                                      for buzzers > ~12 mA)
-//   Relay module     IN               GPIO23           Active HIGH by default, see
-//                                                      RELAY_ACTIVE_LOW
+//   Relay module     IN               GPIO23           Active LOW on this board (relay
+//                                                      energises on LOW), see
+//                                                      RELAY_ACTIVE_HIGH
 //   USB Serial        (debug/logs)    GPIO1 / GPIO3    115200 baud, via USB-UART
 // ---------------------------------------------------------------------------
 // I2C bus — used by the OLED only, on the ESP32's default I2C pins.
@@ -106,7 +109,7 @@ constexpr int PZEM_TX_PIN = 17; // ESP32 TX2 -> PZEM RX
 
 constexpr int WARNING_PIN = 13; // buzzer/LED, active HIGH
 constexpr int RELAY_PIN = 23;   // load contactor/relay control
-constexpr bool RELAY_ACTIVE_LOW = false; // flip to true if your relay module is active-low
+constexpr bool RELAY_ACTIVE_HIGH = false; // true: relay energises on HIGH. false: on LOW (this board's module is active-low)
 
 constexpr uint8_t OLED_ADDRESS = 0x3C;
 constexpr int OLED_WIDTH = 128;
@@ -132,14 +135,14 @@ constexpr unsigned long PZEM_FAULT_CUTOFF_MS = 60000;
 // plain HTTP, so keep the meter on a trusted LAN — don't expose it to the
 // internet.
 // ---------------------------------------------------------------------------
-constexpr const char *WIFI_SSID = "YOUR_WIFI_SSID";
-constexpr const char *WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
+constexpr const char *WIFI_SSID = "Sahasra";
+constexpr const char *WIFI_PASSWORD = "wintek@143";
 constexpr unsigned long WIFI_CONNECT_TIMEOUT_MS = 15000;
 
 constexpr const char *AP_SSID = "PrepaidMeter";
 constexpr const char *AP_PASSWORD = "prepaid1234"; // 8+ characters, or "" for an open hotspot
 
-constexpr const char *ADMIN_PASSWORD = "change-me";
+constexpr const char *ADMIN_PASSWORD = "Sesi@143";
 constexpr const char *MDNS_HOSTNAME = "prepaid-meter";
 constexpr uint16_t WEB_PORT = 80;
 
@@ -190,6 +193,7 @@ double cycleUnitsConsumed = 0; // fractional units billed so far this cycle
 float lastMeterKwh = -1;       // -1 = not yet established (avoid billing on first boot)
 Tariff tariff;
 bool relayEngaged = true;
+bool relayManualOff = false;   // "Relay OFF" hold from the web interface (persisted in NVS)
 
 struct MeterReadings {
   float voltage = NAN;
@@ -217,13 +221,18 @@ bool webStarted = false;          // HTTP server is listening
 // Setup / main loop
 // ---------------------------------------------------------------------------
 void setup() {
+  // First thing: put the relay pin at its "off" level *before* making it an
+  // output. Otherwise the pin defaults LOW, which on an active-low module
+  // briefly energises the relay (load connected) at every boot.
+  digitalWrite(RELAY_PIN, RELAY_ACTIVE_HIGH ? LOW : HIGH);
+  pinMode(RELAY_PIN, OUTPUT);
+
   Serial.begin(115200);
   while (!Serial) delay(10);
 
   printPinConfig();
 
   pinMode(WARNING_PIN, OUTPUT);
-  pinMode(RELAY_PIN, OUTPUT);
 
   Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN); // OLED
   SPI.begin(PN532_SCK_PIN, PN532_MISO_PIN, PN532_MOSI_PIN, PN532_SS_PIN); // PN532
@@ -241,7 +250,7 @@ void setup() {
   prefs.begin("meter", false);
   loadStateFromNvs();
 
-  setRelay(balancePaise > 0);
+  setRelay(balancePaise > 0 && !relayManualOff);
   applyBalanceState();
 
   delay(1000); // give the PZEM time to stabilize before the first read

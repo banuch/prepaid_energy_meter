@@ -5,6 +5,7 @@
 //   GET  /api/status           live status as JSON (open)
 //   POST /api/reset-balance    body amount=<rupees> (optional, default 0)  [admin]
 //   POST /api/reset-cycle      billing cycle units back to 0               [admin]
+//   POST /api/relay            body state=off (hold power cut) | on (release) [admin]
 //
 // Admin calls carry HTTP Basic auth (user "admin", password ADMIN_PASSWORD).
 // Wrong passwords answer 401 without WWW-Authenticate, so the browser doesn't
@@ -69,6 +70,7 @@ String statusJson() {
 
   doc["lowBalanceThresholdPaise"] = LOW_BALANCE_WARNING_PAISE;
   doc["pzemOk"] = !isnan(latest.voltage);
+  doc["relayReason"] = relayReason();
   doc["wifiMode"] = wifiModeLabel();
   doc["ip"] = wifiIp();
   doc["uptimeS"] = millis() / 1000;
@@ -121,6 +123,21 @@ void handleResetCycle() {
   sendJson(200, statusJson());
 }
 
+void handleRelay() {
+  if (!requireAdmin()) return;
+
+  String state = server.arg("state");
+  if (state == "off") {
+    setRelayManualOff(true);
+  } else if (state == "on") {
+    setRelayManualOff(false);
+  } else {
+    sendError(400, "state must be on or off");
+    return;
+  }
+  sendJson(200, statusJson());
+}
+
 void handleNotFound() {
   sendError(404, "Not found");
 }
@@ -137,6 +154,7 @@ void webBegin() {
   server.on("/api/status", HTTP_GET, handleStatus);
   server.on("/api/reset-balance", HTTP_POST, handleResetBalance);
   server.on("/api/reset-cycle", HTTP_POST, handleResetCycle);
+  server.on("/api/relay", HTTP_POST, handleRelay);
   server.onNotFound(handleNotFound);
   server.begin();
   webStarted = true;

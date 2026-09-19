@@ -7,7 +7,7 @@ void printPinConfig() {
   Serial.printf("OLED SSD1306 : SDA=GPIO%d  SCL=GPIO%d  addr=0x%02X  %dx%d\n", I2C_SDA_PIN, I2C_SCL_PIN, OLED_ADDRESS, OLED_WIDTH, OLED_HEIGHT);
   Serial.printf("PZEM UART2   : RX2=GPIO%d (<- PZEM TX)  TX2=GPIO%d (-> PZEM RX)  9600 baud\n", PZEM_RX_PIN, PZEM_TX_PIN);
   Serial.printf("Warning out  : GPIO%d (active HIGH)\n", WARNING_PIN);
-  Serial.printf("Relay out    : GPIO%d (%s)\n", RELAY_PIN, RELAY_ACTIVE_LOW ? "active LOW" : "active HIGH");
+  Serial.printf("Relay out    : GPIO%d (%s)\n", RELAY_PIN, RELAY_ACTIVE_HIGH ? "active HIGH" : "active LOW");
   Serial.println("USB Serial   : GPIO1/GPIO3, 115200 baud");
   Serial.printf("Low-balance threshold: Rs %.2f\n", LOW_BALANCE_WARNING_PAISE / 100.0);
   Serial.println("=========================");
@@ -45,6 +45,7 @@ void fillStatusJson(JsonDocument &doc, bool lowBalance) {
   doc["balanceRupees"] = balancePaise / 100.0;
   doc["lowBalance"] = lowBalance;
   doc["relayEngaged"] = relayEngaged;
+  doc["relayManualOff"] = relayManualOff;
   doc["pzemFaultCutoff"] = pzemFaultCutoff;
   doc["nfcAvailable"] = nfcAvailable;
   doc["cycleUnitsConsumed"] = cycleUnitsConsumed;

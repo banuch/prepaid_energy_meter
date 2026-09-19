@@ -25,7 +25,7 @@ void pollEnergyMeter() {
     latest.frequency = NAN;
     latest.pf = NAN;
   }
-  printMeterReadings();
+  //printMeterReadings();
   updateDisplay();
 
   float kwh = latest.energy;

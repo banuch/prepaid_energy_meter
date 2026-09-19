@@ -82,8 +82,12 @@ button:disabled{opacity:.5}
     <input id="amount" type="number" min="0" max="99999.99" step="0.01" value="0">
     <button class="danger" id="btnBal">Reset balance</button>
     <button id="btnCycle">Reset billing cycle</button>
+    <label>Load relay (manual)</label>
+    <button class="danger" id="btnOff">Relay OFF</button>
+    <button id="btnOn">Relay ON</button>
     <div id="msg"></div>
     <div class="note">A balance of Rs 0 cuts the relay immediately. Recharge history is untouched, so an already-used card can't be credited again.</div>
+    <div class="note">Relay OFF holds power cut, even after a recharge, until you press Relay ON. Relay ON only restores power if there is balance and the PZEM is responding.</div>
   </section>
 </div>
 </main>
@@ -99,7 +103,8 @@ function badge(id,txt,cls){var b=$(id);b.textContent=txt;b.className='badge '+cl
 function render(s){
   set('balance',rs(s.balancePaise));
   $('balanceCard').className='card hero'+(s.balancePaise===0?' bad':(s.lowBalance?' warn':''));
-  badge('relayBadge',s.relayEngaged?'POWER ON':'POWER CUT',s.relayEngaged?'ok':'bad');
+  var why={on:'POWER ON',manual:'POWER CUT (MANUAL)',pzem_fault:'POWER CUT (PZEM FAULT)',no_balance:'POWER CUT (NO BALANCE)'};
+  badge('relayBadge',why[s.relayReason]||(s.relayEngaged?'POWER ON':'POWER CUT'),s.relayEngaged?'ok':'bad');
   $('lowBadge').style.display=s.lowBalance?'inline-block':'none';
   $('faultBadge').style.display=s.pzemFaultCutoff?'inline-block':'none';
   set('v',num(s.voltageV,1,'V'));
@@ -138,17 +143,24 @@ function poll(){
 setInterval(poll,2000);poll();
 
 function msg(t,bad){var m=$('msg');m.textContent=t;m.className=bad?'err':'good';}
+function busy(v){['btnBal','btnCycle','btnOn','btnOff'].forEach(function(id){$(id).disabled=v;});}
 
 function post(path,body){
   var pass=$('pw').value;
   if(!pass){msg('Enter the admin password first.',true);return;}
   var auth='Basic '+btoa(unescape(encodeURIComponent('admin:'+pass)));
-  $('btnBal').disabled=$('btnCycle').disabled=true;
+  busy(true);
   fetch(path,{method:'POST',headers:{'Authorization':auth,'Content-Type':'application/x-www-form-urlencoded'},body:body})
     .then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j};});})
-    .then(function(x){if(x.ok){msg('Done.',false);render(x.j);}else{msg(x.j.error||'Failed.',true);}})
+    .then(function(x){
+      if(!x.ok){msg(x.j.error||'Failed.',true);return;}
+      render(x.j);
+      if(body==='state=on'&&!x.j.relayEngaged){
+        msg('Hold released, but the relay stays off: '+(x.j.relayReason==='pzem_fault'?'PZEM fault.':'no balance.'),true);
+      }else{msg('Done.',false);}
+    })
     .catch(function(){msg('Meter not reachable.',true);})
-    .then(function(){$('btnBal').disabled=$('btnCycle').disabled=false;});
+    .then(function(){busy(false);});
 }
 
 $('btnBal').onclick=function(){
@@ -160,6 +172,12 @@ $('btnBal').onclick=function(){
 };
 $('btnCycle').onclick=function(){
   if(confirm('Reset the billing cycle? Cycle units go back to 0 and billing restarts from the first slab.'))post('/api/reset-cycle','');
+};
+$('btnOff').onclick=function(){
+  if(confirm('Cut power to the load now? It stays off, even after a recharge, until you press Relay ON.'))post('/api/relay','state=off');
+};
+$('btnOn').onclick=function(){
+  if(confirm('Release the manual hold? Power returns only if there is balance and the PZEM is responding.'))post('/api/relay','state=on');
 };
 </script>
 </body>

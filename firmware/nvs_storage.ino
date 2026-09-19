@@ -7,6 +7,7 @@ void loadStateFromNvs() {
   lastAppliedRechargeCounter = prefs.getUInt("lastCounter", 0);
   cycleUnitsConsumed = prefs.getDouble("cycleUnits", 0.0);
   lastMeterKwh = prefs.getFloat("lastKwh", -1.0);
+  relayManualOff = prefs.getBool("relayOff", false);
 
   tariff.version = prefs.getUChar("tariffVer", 0);
   tariff.slabCount = prefs.getUChar("tariffCount", 0);
@@ -22,4 +23,7 @@ void loadStateFromNvs() {
     tariff.version,
     cycleUnitsConsumed
   );
+  if (relayManualOff) {
+    Serial.println("Relay is held OFF (set from the web interface) — press Relay ON on the dashboard to release.");
+  }
 }
