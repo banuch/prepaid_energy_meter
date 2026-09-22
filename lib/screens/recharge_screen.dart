@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/card_data.dart';
 import '../models/tariff.dart';
 import '../services/nfc_service.dart';
+import '../widgets/nfc_pulse.dart';
 
 class RechargeScreen extends StatefulWidget {
   const RechargeScreen({super.key, required this.card});
@@ -79,63 +80,141 @@ class _RechargeScreenState extends State<RechargeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Recharge Card')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            TextField(
-              controller: _serviceNumberController,
-              enabled: !_writing,
-              decoration: const InputDecoration(
-                labelText: 'Service No',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _amountController,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              enabled: !_writing,
-              decoration: const InputDecoration(
-                labelText: 'Recharge amount (₹)',
-                border: OutlineInputBorder(),
-              ),
-              onChanged: (_) => setState(() {}),
-            ),
-            const SizedBox(height: 32),
-            if (_writing) ...[
-              const Text(
-                'Hold the card near the phone to write the recharge…',
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              const Center(child: CircularProgressIndicator()),
-              const SizedBox(height: 16),
-              Center(
-                child: TextButton(
-                  onPressed: _cancelWrite,
-                  child: const Text('Cancel'),
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 520),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 320),
+                switchInCurve: Curves.easeOut,
+                switchOutCurve: Curves.easeIn,
+                transitionBuilder: (child, animation) => FadeTransition(
+                  opacity: animation,
+                  child: ScaleTransition(
+                    scale: Tween(begin: 0.97, end: 1.0).animate(animation),
+                    child: child,
+                  ),
                 ),
+                child: _writing
+                    ? _WritingState(onCancel: _cancelWrite)
+                    : _FormState(
+                        serviceNumberController: _serviceNumberController,
+                        amountController: _amountController,
+                        error: _error,
+                        onSubmit: _recharge,
+                        onAmountChanged: () => setState(() {}),
+                      ),
               ),
-            ] else
-              FilledButton.icon(
-                onPressed: _recharge,
-                icon: const Icon(Icons.nfc),
-                label: const Text('Write to card'),
-              ),
-            if (_error != null) ...[
-              const SizedBox(height: 16),
-              Text(
-                _error!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ],
+            ),
+          ),
         ),
+      ),
+    );
+  }
+}
+
+class _FormState extends StatelessWidget {
+  const _FormState({
+    required this.serviceNumberController,
+    required this.amountController,
+    required this.error,
+    required this.onSubmit,
+    required this.onAmountChanged,
+  });
+
+  final TextEditingController serviceNumberController;
+  final TextEditingController amountController;
+  final String? error;
+  final VoidCallback onSubmit;
+  final VoidCallback onAmountChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      key: const ValueKey('form'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TextField(
+          controller: serviceNumberController,
+          decoration: const InputDecoration(labelText: 'Service No'),
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: amountController,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: const InputDecoration(labelText: 'Recharge amount (₹)'),
+          onChanged: (_) => onAmountChanged(),
+        ),
+        const SizedBox(height: 32),
+        FilledButton.icon(
+          onPressed: onSubmit,
+          icon: const Icon(Icons.nfc),
+          label: const Text('Write to card'),
+        ),
+        if (error != null) ...[
+          const SizedBox(height: 16),
+          _ErrorBanner(message: error!),
+        ],
+      ],
+    );
+  }
+}
+
+class _WritingState extends StatelessWidget {
+  const _WritingState({required this.onCancel});
+
+  final VoidCallback onCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      key: const ValueKey('writing'),
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 32),
+        const Center(child: NfcPulse(icon: Icons.add_card)),
+        const SizedBox(height: 24),
+        Text(
+          'Hold the card near the phone to write the recharge…',
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.bodyLarge,
+        ),
+        const SizedBox(height: 24),
+        OutlinedButton(onPressed: onCancel, child: const Text('Cancel')),
+      ],
+    );
+  }
+}
+
+class _ErrorBanner extends StatelessWidget {
+  const _ErrorBanner({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: colorScheme.errorContainer,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.error_outline, color: colorScheme.onErrorContainer),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(color: colorScheme.onErrorContainer),
+            ),
+          ),
+        ],
       ),
     );
   }
