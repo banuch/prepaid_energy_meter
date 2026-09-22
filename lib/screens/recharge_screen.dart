@@ -77,8 +77,6 @@ class _RechargeScreenState extends State<RechargeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final pendingPaise = widget.card.cardAmountPaise;
-
     return Scaffold(
       appBar: AppBar(title: const Text('Recharge Card')),
       body: SingleChildScrollView(
@@ -95,26 +93,6 @@ class _RechargeScreenState extends State<RechargeScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            if (pendingPaise > 0) ...[
-              Card(
-                margin: EdgeInsets.zero,
-                color: Theme.of(context).colorScheme.errorContainer,
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Text(
-                    'This card already has an unclaimed ₹${(pendingPaise / 100).toStringAsFixed(2)} '
-                    'from a previous recharge. Make sure the meter has read it before you overwrite it — '
-                    'writing a new amount discards whatever is currently on the card.',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onErrorContainer,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
-            const _TariffCard(tariff: _tariff),
-            const SizedBox(height: 16),
             TextField(
               controller: _amountController,
               keyboardType: const TextInputType.numberWithOptions(
@@ -126,26 +104,6 @@ class _RechargeScreenState extends State<RechargeScreen> {
                 border: OutlineInputBorder(),
               ),
               onChanged: (_) => setState(() {}),
-            ),
-            const SizedBox(height: 12),
-            Card(
-              margin: EdgeInsets.zero,
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _SummaryRow(
-                      label: 'Amount to write',
-                      value: '₹${(_amountPaise / 100).toStringAsFixed(2)}',
-                    ),
-                    _SummaryRow(
-                      label: 'Recharge #',
-                      value: '${widget.card.rechargeCount + 1}',
-                    ),
-                  ],
-                ),
-              ),
             ),
             const SizedBox(height: 32),
             if (_writing) ...[
@@ -178,81 +136,6 @@ class _RechargeScreenState extends State<RechargeScreen> {
             ],
           ],
         ),
-      ),
-    );
-  }
-}
-
-/// Read-only reference table — informational only. The meter, not this
-/// app, uses these rates to convert consumption into cost.
-class _TariffCard extends StatelessWidget {
-  const _TariffCard({required this.tariff});
-
-  final TariffTable tariff;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
-    return Card(
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Tariff — Domestic Group C', style: textTheme.titleSmall),
-            Text(
-              'Applied by the meter to bill consumption, not to this recharge.',
-              style: textTheme.bodySmall,
-            ),
-            const SizedBox(height: 8),
-            ...tariff.slabs.map((slab) {
-              final range = slab.upperLimitUnits == null
-                  ? 'Above'
-                  : 'Up to ${slab.upperLimitUnits}';
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('$range units', style: textTheme.bodyMedium),
-                    Text(
-                      '₹${slab.rateRupees.toStringAsFixed(2)}/unit',
-                      style: textTheme.bodyMedium,
-                    ),
-                  ],
-                ),
-              );
-            }),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SummaryRow extends StatelessWidget {
-  const _SummaryRow({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: Theme.of(context).textTheme.bodyMedium),
-          Text(
-            value,
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
-          ),
-        ],
       ),
     );
   }

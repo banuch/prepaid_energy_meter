@@ -1,7 +1,4 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:nfc_manager/nfc_manager.dart';
 
 import '../models/card_data.dart';
@@ -61,40 +58,6 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => _scanning = false);
   }
 
-  void _showJson(BuildContext context, CardData card) {
-    final json = const JsonEncoder.withIndent('  ').convert(card.toJson());
-    showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Card data (JSON)'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: SingleChildScrollView(
-            child: SelectableText(
-              json,
-              style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Clipboard.setData(ClipboardData(text: json));
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Copied to clipboard')),
-              );
-            },
-            child: const Text('Copy'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
-  }
-
   Future<void> _openRecharge() async {
     final card = _lastCard;
     if (card == null) return;
@@ -112,17 +75,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final card = _lastCard;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Prepaid Energy Meter'),
-        actions: [
-          if (card != null)
-            IconButton(
-              tooltip: 'View JSON',
-              icon: const Icon(Icons.data_object),
-              onPressed: () => _showJson(context, card),
-            ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('Prepaid Energy Meter')),
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -187,8 +140,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-/// Shows the card's identity, memory capacity, and a dump of every block's
-/// stored data.
+/// Shows the card's identity, pending amount, and recharge/tariff summary.
 class _CardDetails extends StatelessWidget {
   const _CardDetails({required this.card});
 
@@ -225,52 +177,6 @@ class _CardDetails extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           _AccountSummary(card: card),
-          const SizedBox(height: 16),
-          _MemorySummary(card: card),
-          const SizedBox(height: 16),
-          Text('Stored data', style: textTheme.titleMedium),
-          const SizedBox(height: 4),
-          Card(
-            margin: EdgeInsets.zero,
-            child: ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              itemCount: card.blocks.length,
-              itemBuilder: (context, index) {
-                final block = card.blocks[index];
-                final isBalanceBlock =
-                    block.sectorIndex == NfcService.amountSector &&
-                    block.blockIndex == NfcService.amountBlock;
-
-                return ListTile(
-                  dense: true,
-                  visualDensity: VisualDensity.compact,
-                  leading: Text(
-                    'S${block.sectorIndex}\nB${block.blockIndex}',
-                    style: textTheme.bodySmall,
-                    textAlign: TextAlign.center,
-                  ),
-                  title: Text(
-                    block.hex,
-                    style: textTheme.bodySmall?.copyWith(
-                      fontFamily: 'monospace',
-                    ),
-                  ),
-                  trailing: isBalanceBlock
-                      ? const Icon(Icons.bolt, size: 16)
-                      : (!block.readable
-                            ? const Icon(Icons.lock, size: 16)
-                            : null),
-                  tileColor: isBalanceBlock
-                      ? Theme.of(
-                          context,
-                        ).colorScheme.primaryContainer.withValues(alpha: 0.4)
-                      : null,
-                );
-              },
-            ),
-          ),
         ],
       ),
     );
@@ -327,43 +233,6 @@ class _AccountSummary extends StatelessWidget {
                 value: '₹${slab.rateRupees.toStringAsFixed(2)}/unit',
               );
             }),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _MemorySummary extends StatelessWidget {
-  const _MemorySummary({required this.card});
-
-  final CardData card;
-
-  @override
-  Widget build(BuildContext context) {
-    final readableBytes =
-        card.blocks.where((b) => b.readable && !b.isTrailer).length * 16;
-
-    return Card(
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Card memory', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            _MemoryRow(
-              label: 'Total capacity',
-              value: '${card.totalSizeBytes} bytes',
-            ),
-            _MemoryRow(label: 'Sectors', value: '${card.sectorCount}'),
-            _MemoryRow(label: 'Blocks', value: '${card.blockCount}'),
-            _MemoryRow(
-              label: 'Readable data',
-              value:
-                  '$readableBytes bytes (${card.readableBlockCount}/${card.blockCount} blocks)',
-            ),
           ],
         ),
       ),

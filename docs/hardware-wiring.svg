@@ -1,0 +1,142 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1120" viewBox="0 0 1600 1120" role="img" aria-labelledby="title desc">
+  <title id="title">ESP32 prepaid energy meter hardware wiring map</title>
+  <desc id="desc">Semantic block diagram showing the firmware GPIO assignments for the ESP32, PN532 NFC reader, SSD1306 OLED, PZEM-004T v3 energy meter, low-balance indicator, active-low relay, USB serial, Wi-Fi dashboard, mains source and protected load.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#071426"/>
+      <stop offset="1" stop-color="#10243a"/>
+    </linearGradient>
+    <linearGradient id="esp" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1f8c7c"/>
+      <stop offset="1" stop-color="#106155"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#000" flood-opacity=".35"/>
+    </filter>
+    <marker id="arrowBlue" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#55c8ff"/></marker>
+    <marker id="arrowAmber" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#ffbd59"/></marker>
+    <marker id="arrowGreen" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#58e0a7"/></marker>
+    <style>
+      .title{font:700 36px 'Segoe UI',Arial,sans-serif;fill:#f6fbff}.subtitle{font:400 17px 'Segoe UI',Arial,sans-serif;fill:#aac4d8}
+      .box{fill:#132b43;stroke:#3f627c;stroke-width:2;rx:18;filter:url(#shadow)}.boxtitle{font:700 21px 'Segoe UI',Arial,sans-serif;fill:#fff}.small{font:400 15px 'Segoe UI',Arial,sans-serif;fill:#c7d9e7}.pin{font:600 15px 'Cascadia Mono','Consolas',monospace;fill:#f7fbff}.muted{font:400 13px 'Segoe UI',Arial,sans-serif;fill:#9bb4c7}.label{font:600 14px 'Segoe UI',Arial,sans-serif;fill:#e7f4fc}.callout{fill:#2a2418;stroke:#d79b31;stroke-width:2;rx:14}.danger{fill:#351b20;stroke:#ff6d78;stroke-width:2;rx:14}
+      .signal{fill:none;stroke:#55c8ff;stroke-width:3}.power{fill:none;stroke:#58e0a7;stroke-width:3}.control{fill:none;stroke:#ffbd59;stroke-width:3}.wireless{fill:none;stroke:#9d8cff;stroke-width:3;stroke-dasharray:10 8}.mains{fill:none;stroke:#ff6d78;stroke-width:7}.ground{fill:none;stroke:#889cac;stroke-width:3;stroke-dasharray:7 6}
+    </style>
+  </defs>
+  <rect width="1600" height="1120" fill="url(#bg)"/>
+  <text x="70" y="65" class="title">ESP32 Prepaid Energy Meter — Hardware &amp; GPIO Map</text>
+  <text x="70" y="96" class="subtitle">Derived from the firmware pin constants • blue = data • amber = control • green = low-voltage power • red = mains path</text>
+
+  <!-- Central controller -->
+  <rect x="600" y="190" width="400" height="650" rx="28" fill="url(#esp)" stroke="#63d7c1" stroke-width="3" filter="url(#shadow)"/>
+  <rect x="650" y="225" width="300" height="110" rx="12" fill="#133b38" stroke="#82e8d5"/>
+  <text x="800" y="270" text-anchor="middle" class="boxtitle" style="font-size:30px">ESP32 Dev Board</text>
+  <text x="800" y="300" text-anchor="middle" class="small">Wi-Fi + NVS + web dashboard</text>
+  <text x="635" y="385" class="pin">GPIO27  → PN532 SCK</text>
+  <text x="635" y="420" class="pin">GPIO34  ← PN532 MISO</text>
+  <text x="635" y="455" class="pin">GPIO26  → PN532 MOSI</text>
+  <text x="635" y="490" class="pin">GPIO32  → PN532 SS / CS</text>
+  <text x="635" y="540" class="pin">GPIO21  ↔ OLED SDA</text>
+  <text x="635" y="575" class="pin">GPIO22  → OLED SCL</text>
+  <text x="635" y="625" class="pin">GPIO16  ← PZEM TX (RX2)</text>
+  <text x="635" y="660" class="pin">GPIO17  → PZEM RX (TX2)</text>
+  <text x="635" y="710" class="pin">GPIO13  → WARNING (HIGH)</text>
+  <text x="635" y="745" class="pin">GPIO23  → RELAY IN (LOW)</text>
+  <text x="635" y="795" class="pin">GPIO1 / GPIO3 ↔ USB UART0</text>
+
+  <!-- NFC -->
+  <rect x="70" y="165" width="420" height="255" class="box"/>
+  <text x="100" y="205" class="boxtitle">PN532 NFC reader</text>
+  <text x="100" y="232" class="small">Set module switches/jumpers to SPI mode</text>
+  <text x="100" y="275" class="pin">SCK  ← GPIO27</text>
+  <text x="100" y="307" class="pin">MISO → GPIO34</text>
+  <text x="100" y="339" class="pin">MOSI ← GPIO26</text>
+  <text x="100" y="371" class="pin">SS   ← GPIO32</text>
+  <text x="330" y="275" class="pin">VCC ← 3V3</text>
+  <text x="330" y="307" class="pin">GND ↔ GND</text>
+  <path d="M600 385 C548 385 540 292 490 292" class="signal" marker-end="url(#arrowBlue)"/>
+  <path d="M490 324 C540 324 548 420 600 420" class="signal" marker-end="url(#arrowBlue)"/>
+  <path d="M600 455 C548 455 540 356 490 356" class="signal" marker-end="url(#arrowBlue)"/>
+  <path d="M600 490 C548 490 540 388 490 388" class="signal" marker-end="url(#arrowBlue)"/>
+  <rect x="95" y="445" width="250" height="85" rx="14" fill="#3c315c" stroke="#a790ff" stroke-width="2"/>
+  <text x="220" y="480" text-anchor="middle" class="boxtitle" style="font-size:18px">MIFARE card</text>
+  <text x="220" y="507" text-anchor="middle" class="small">Recharge + tariff data</text>
+  <path d="M220 445 C220 425 230 420 250 420" class="wireless"/>
+
+  <!-- OLED -->
+  <rect x="70" y="585" width="420" height="180" class="box"/>
+  <text x="100" y="625" class="boxtitle">SSD1306 OLED — 128×32</text>
+  <text x="100" y="654" class="small">I2C address 0x3C • no reset GPIO</text>
+  <text x="100" y="700" class="pin">SDA ↔ GPIO21</text>
+  <text x="100" y="732" class="pin">SCL ← GPIO22</text>
+  <text x="330" y="700" class="pin">VCC ← 3V3</text>
+  <text x="330" y="732" class="pin">GND ↔ GND</text>
+  <path d="M490 700 C545 700 545 540 600 540" class="signal" marker-start="url(#arrowBlue)" marker-end="url(#arrowBlue)"/>
+  <path d="M600 575 C550 575 555 732 490 732" class="signal" marker-end="url(#arrowBlue)"/>
+
+  <!-- warning output -->
+  <rect x="70" y="820" width="420" height="170" class="box"/>
+  <text x="100" y="860" class="boxtitle">Low-balance alert</text>
+  <text x="100" y="890" class="small">GPIO13 active HIGH when balance &lt; Rs 50</text>
+  <text x="100" y="930" class="pin">GPIO13 → resistor + LED</text>
+  <text x="100" y="960" class="pin">or → transistor → buzzer</text>
+  <path d="M600 710 C545 710 545 920 490 920" class="control" marker-end="url(#arrowAmber)"/>
+
+  <!-- Wi-Fi / serial -->
+  <rect x="605" y="895" width="390" height="135" class="box"/>
+  <text x="635" y="932" class="boxtitle">Service interfaces</text>
+  <text x="635" y="965" class="small">Wi-Fi: router/AP → browser dashboard</text>
+  <text x="635" y="995" class="small">USB-UART: GPIO1 TX / GPIO3 RX, 115200</text>
+  <path d="M800 840 L800 895" class="wireless" marker-end="url(#arrowBlue)"/>
+
+  <!-- PZEM -->
+  <rect x="1110" y="165" width="420" height="255" class="box"/>
+  <text x="1140" y="205" class="boxtitle">PZEM-004T v3.0</text>
+  <text x="1140" y="235" class="small">Voltage / current / power / kWh / Hz / PF</text>
+  <text x="1140" y="282" class="pin">TX → GPIO16 (ESP RX2)</text>
+  <text x="1140" y="315" class="pin">RX ← GPIO17 (ESP TX2)</text>
+  <text x="1140" y="348" class="pin">VCC ← 5V (VIN)</text>
+  <text x="1140" y="381" class="pin">GND ↔ common GND</text>
+  <path d="M1110 282 C1050 282 1050 625 1000 625" class="signal" marker-end="url(#arrowBlue)"/>
+  <path d="M1000 660 C1065 660 1060 315 1110 315" class="signal" marker-end="url(#arrowBlue)"/>
+  <rect x="1130" y="445" width="380" height="82" class="callout"/>
+  <text x="1152" y="476" class="label">Check UART voltage level</text>
+  <text x="1152" y="503" class="small">Level-shift PZEM TX if it exceeds 3.3 V.</text>
+
+  <!-- Relay -->
+  <rect x="1110" y="585" width="420" height="205" class="box"/>
+  <text x="1140" y="625" class="boxtitle">Relay module / rated contactor</text>
+  <text x="1140" y="655" class="small">Firmware setting: active LOW</text>
+  <text x="1140" y="700" class="pin">IN  ← GPIO23</text>
+  <text x="1140" y="733" class="pin">VCC ← module-rated supply</text>
+  <text x="1140" y="766" class="pin">GND ↔ common GND</text>
+  <path d="M1000 745 C1055 745 1055 700 1110 700" class="control" marker-end="url(#arrowAmber)"/>
+
+  <!-- power rails -->
+  <path d="M535 130 L535 1035" class="power"/>
+  <text x="520" y="150" text-anchor="end" class="label">3V3 / 5V rails</text>
+  <path d="M560 130 L560 1035" class="ground"/>
+  <text x="575" y="150" class="label">COMMON GND</text>
+  <path d="M490 245 L535 245" class="power"/><path d="M490 265 L560 265" class="ground"/>
+  <path d="M490 670 L535 670" class="power"/><path d="M490 690 L560 690" class="ground"/>
+  <path d="M1000 350 L1075 350 L1075 348 L1110 348" class="power"/><path d="M1000 375 L1085 375 L1085 381 L1110 381" class="ground"/>
+  <path d="M1000 775 L1085 775 L1085 766 L1110 766" class="ground"/>
+
+  <!-- conceptual mains path -->
+  <rect x="1080" y="855" width="470" height="190" class="danger"/>
+  <text x="1110" y="895" class="boxtitle">MAINS — conceptual power path only</text>
+  <text x="1110" y="925" class="small">Supply + fuse/MCB → PZEM sensing → relay/contactor → load</text>
+  <circle cx="1140" cy="975" r="24" fill="#54242b" stroke="#ff6d78" stroke-width="3"/>
+  <text x="1140" y="981" text-anchor="middle" class="label">AC</text>
+  <path d="M1164 975 L1225 975" class="mains" marker-end="url(#arrowAmber)"/>
+  <rect x="1230" y="950" width="78" height="50" rx="8" fill="#54242b" stroke="#ff6d78"/>
+  <text x="1269" y="981" text-anchor="middle" class="label">PZEM</text>
+  <path d="M1308 975 L1340 975" class="mains" marker-end="url(#arrowAmber)"/>
+  <rect x="1345" y="950" width="78" height="50" rx="8" fill="#54242b" stroke="#ff6d78"/>
+  <text x="1384" y="981" text-anchor="middle" class="label">RELAY</text>
+  <path d="M1423 975 L1450 975" class="mains" marker-end="url(#arrowAmber)"/>
+  <rect x="1455" y="950" width="62" height="50" rx="8" fill="#54242b" stroke="#ff6d78"/>
+  <text x="1486" y="981" text-anchor="middle" class="label">LOAD</text>
+  <text x="1110" y="1025" class="muted">Use the exact module manual and a qualified electrician; keep mains isolated.</text>
+
+  <text x="70" y="1080" class="muted">Firmware audit: no GPIO conflicts detected. Board-specific restrictions still apply (for example, modules with PSRAM may reserve pins).</text>
+</svg>
