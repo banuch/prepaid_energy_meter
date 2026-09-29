@@ -1,0 +1,25 @@
+{
+  "name": "recharge-station-server",
+  "version": "1.0.0",
+  "description": "Desk-side recharge station for the offline prepaid energy meter",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "start:mock": "node -e \"process.env.NFC_MOCK=1;require('./src/index.js')\"",
+    "db:init": "node scripts/init-db.js",
+    "nfc-test": "node scripts/nfc-test.js",
+    "test": "node --test test/*.test.js"
+  },
+  "license": "UNLICENSED",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^13.0.3",
+    "express": "^5.2.1",
+    "serialport": "^13.0.0",
+    "ws": "^8.21.3"
+  },
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  }
+}

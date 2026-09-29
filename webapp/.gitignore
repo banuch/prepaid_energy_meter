@@ -1,0 +1,6 @@
+node_modules/
+client/dist/
+# Database, mock cards and NFC logs — live data, back it up, don't commit it
+server/data/
+server/config.json
+*.log
